@@ -4,45 +4,21 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use GuzzleHttp\Client;
+use App\ChatworkSender;
+use App\Config;
+use App\Security;
 use GuzzleHttp\Exception\GuzzleException;
 
 // セッション開始
-session_start();
-
-/**
- * XSS対策用：HTMLエスケープ
- */
-function h(string $str): string
-{
-    return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
-/**
- * CSRFトークン生成
- */
-function generateToken(): string
-{
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
-/**
- * CSRFトークン検証
- */
-function validateToken(?string $token): bool
-{
-    return !empty($token) && hash_equals($_SESSION['csrf_token'] ?? '', $token);
-}
-
-// 環境変数の取得
-$apiToken = getenv('CHATWORK_API_TOKEN');
-$roomId = getenv('CHATWORK_ROOM_ID');
-
-// 環境変数が未設定の場合のエラー表示
-if (!$apiToken || !$roomId) {
+try {
+    // 環境変数の取得と検証
+    $config = Config::getEnv();
+} catch (\RuntimeException $e) {
+    // 環境変数が未設定の場合のエラー表示
     die('<!DOCTYPE html>
     <html lang="ja">
     <head>
@@ -54,7 +30,7 @@ if (!$apiToken || !$roomId) {
         <div class="container mt-5">
             <div class="alert alert-danger" role="alert">
                 <h4 class="alert-heading">システムエラー</h4>
-                <p>環境変数 <code>CHATWORK_API_TOKEN</code> または <code>CHATWORK_ROOM_ID</code> が設定されていません。</p>
+                <p>' . Security::h($e->getMessage()) . '</p>
                 <hr>
                 <p class="mb-0">サーバーの設定を確認してください。</p>
             </div>
@@ -69,35 +45,26 @@ $flashType = '';
 
 // メッセージ送信処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = $_POST['csrf_token'] ?? '';
+    $token = $_POST['csrf_token'] ?? null;
 
-    if (!validateToken($token)) {
+    if (!Security::validateToken($token)) {
         $flashMessage = '不正なリクエストです。';
         $flashType = 'danger';
     } elseif (empty(trim($message))) {
         $flashMessage = 'メッセージを入力してください。';
         $flashType = 'warning';
     } else {
-        $client = new Client([
-            'base_uri' => 'https://api.chatwork.com/v2/',
-            'headers' => [
-                'X-ChatWorkToken' => $apiToken,
-            ],
-        ]);
+        $sender = new ChatworkSender($config['api_token'], $config['room_id']);
 
         try {
-            $response = $client->request('POST', "rooms/{$roomId}/messages", [
-                'form_params' => [
-                    'body' => $message,
-                ],
-            ]);
+            $statusCode = $sender->sendMessage($message);
 
-            if ($response->getStatusCode() === 200) {
+            if ($statusCode === 200) {
                 $flashMessage = '送信完了';
                 $flashType = 'success';
                 $message = ''; // 送信成功時は入力をクリア
             } else {
-                $flashMessage = '送信に失敗しました。ステータスコード: ' . $response->getStatusCode();
+                $flashMessage = '送信に失敗しました。ステータスコード: ' . $statusCode;
                 $flashType = 'danger';
             }
         } catch (GuzzleException $e) {
@@ -107,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$csrfToken = generateToken();
+$csrfToken = Security::generateToken();
 ?>
 <!DOCTYPE html>
 <html lang="ja">
@@ -128,8 +95,8 @@ $csrfToken = generateToken();
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <?php if ($flashMessage): ?>
-                    <div class="alert alert-<?= h($flashType) ?> alert-dismissible fade show" role="alert">
-                        <?= h($flashMessage) ?>
+                    <div class="alert alert-<?= Security::h($flashType) ?> alert-dismissible fade show" role="alert">
+                        <?= Security::h($flashMessage) ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
                 <?php endif; ?>
@@ -140,7 +107,7 @@ $csrfToken = generateToken();
                     </div>
                     <div class="card-body p-4">
                         <form action="" method="POST" novalidate>
-                            <input type="hidden" name="csrf_token" value="<?= h($csrfToken) ?>">
+                            <input type="hidden" name="csrf_token" value="<?= Security::h($csrfToken) ?>">
 
                             <div class="mb-3">
                                 <label for="message" class="form-label">メッセージ内容</label>
@@ -151,7 +118,7 @@ $csrfToken = generateToken();
                                     rows="5"
                                     placeholder="ここにメッセージを入力してください"
                                     required
-                                ><?= h($message) ?></textarea>
+                                ><?= Security::h($message) ?></textarea>
                                 <div class="invalid-feedback">
                                     メッセージを入力してください。
                                 </div>
