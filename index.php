@@ -58,8 +58,8 @@ function main_http(ServerRequestInterface $request): string
         $token = $parsedBody['csrf_token'] ?? null;
 
         if (!Security::validateToken($token)) {
-            $flashMessage = '不正なリクエストです。';
-            $flashType = 'danger';
+            // CSRFトークン無効の場合は、フォームを表示（メッセージは初期表示）
+            // errorFlashMessageは設定しない
         } elseif (empty(trim((string)$message))) {
             $flashMessage = 'メッセージを入力してください。';
             $flashType = 'warning';
