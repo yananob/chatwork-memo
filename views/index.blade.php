@@ -68,6 +68,16 @@
     <!-- Bootstrap 5 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // オートフォーカスとカーソル位置の設定
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageArea = document.getElementById('message');
+            if (messageArea) {
+                messageArea.focus();
+                const length = messageArea.value.length;
+                messageArea.setSelectionRange(length, length);
+            }
+        });
+
         // クライアントサイド・バリデーションの有効化
         (() => {
             'use strict'
