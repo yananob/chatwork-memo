@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: XXX-run-test
+  group: chatwork-memo-run-test
 
 defaults:
   run:
