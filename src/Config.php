@@ -20,25 +20,22 @@ class Config
     public static function getEnv(): array
     {
         // サービスアカウントキーの取得 (JSON文字列 or ファイルパス)
-        $keyJson = getenv('FIRESTORE_KEY_JSON');
-        $keyPath = getenv('FIRESTORE_KEY_PATH');
+        $keyJson = getenv('FIREBASE_SERVICE_ACCOUNT');
 
         $config = [];
         if ($keyJson) {
             $config['keyFile'] = json_decode((string)$keyJson, true);
-        } elseif ($keyPath) {
-            $config['keyFile'] = $keyPath;
         } else {
-            throw new \RuntimeException('環境変数 FIRESTORE_KEY_JSON または FIRESTORE_KEY_PATH が設定されていません。');
+            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT  が設定されていません。');
         }
 
         try {
             $firestore = new FirestoreClient($config);
-            $docRef = $firestore->collection('config')->document('chatwork');
+            $docRef = $firestore->collection('chatwork-memo')->document('config');
             $snapshot = $docRef->snapshot();
 
             if (!$snapshot->exists()) {
-                throw new \RuntimeException('Firestore に config/chatwork ドキュメントが存在しません。');
+                throw new \RuntimeException('Firestore に chatwork-memo/config ドキュメントが存在しません。');
             }
 
             // Google Cloud Firestore PHPライブラリでは data() メソッドを使用する
@@ -47,7 +44,7 @@ class Config
             $roomId = $data['room_id'] ?? null;
 
             if (!$apiToken || !$roomId) {
-                throw new \RuntimeException('Firestore の config/chatwork に api_token または room_id が設定されていません。');
+                throw new \RuntimeException('Firestore の chatwork-memo/config に api_token または room_id が設定されていません。');
             }
 
             return [

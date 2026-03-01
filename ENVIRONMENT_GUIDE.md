@@ -6,8 +6,8 @@
 
 Firestore 内に以下のデータ構造を準備してください。
 
-- **コレクション名**: `config`
-- **ドキュメント名**: `chatwork`
+- **コレクション名**: `chatwork-memo`
+- **ドキュメント名**: `config`
 - **フィールド**:
   - `api_token`: (string) Chatwork API のアクセストークン
   - `room_id`: (string) メッセージを送信するルームの ID
@@ -16,8 +16,7 @@ Firestore 内に以下のデータ構造を準備してください。
 
 Firestore への接続のために、以下のいずれかの環境変数が必要です。
 
-- `FIRESTORE_KEY_JSON`: サービスアカウントキーの JSON 文字列
-- `FIRESTORE_KEY_PATH`: サービスアカウントキーファイルへの絶対パス
+- `FIREBASE_SERVICE_ACCOUNT`: サービスアカウントキーの JSON 文字列
 
 ### 設定方法の例 (Docker/docker-compose.yml)
 
