@@ -1,4 +1,4 @@
 #!/bin/bash
 set -eu
 
-SECRETS=("KEY1" "KEY2")
+SECRETS=("FIREBASE_SERVICE_ACCOUNT")
