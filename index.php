@@ -48,14 +48,14 @@ function main_http(ServerRequestInterface $request): string
         ]);
     }
 
-    $parsedBody = $request->getParsedBody();
-    $message = $parsedBody['message'] ?? '';
+    $queryParams = $request->getQueryParams();
+    $message = $queryParams['message'] ?? '';
     $flashMessage = '';
     $flashType = '';
 
     // メッセージ送信処理
-    if ($request->getMethod() === 'POST') {
-        $token = $parsedBody['csrf_token'] ?? null;
+    if ($request->getMethod() === 'GET') {
+        $token = $queryParams['csrf_token'] ?? null;
 
         if (!Security::validateToken($token)) {
             // CSRFトークン無効の場合は、フォームを表示（メッセージは初期表示）
