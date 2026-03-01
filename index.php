@@ -48,18 +48,19 @@ function main_http(ServerRequestInterface $request): string
         ]);
     }
 
-    $queryParams = $request->getQueryParams();
-    $message = $queryParams['message'] ?? '';
     $flashMessage = '';
     $flashType = '';
+    $message = '';
 
-    // メッセージ送信処理
-    if ($request->getMethod() === 'GET') {
-        $token = $queryParams['csrf_token'] ?? null;
+    if ($request->getMethod() === 'POST') {
+        // POSTの場合：メッセージ送信処理
+        $parsedBody = $request->getParsedBody();
+        $message = $parsedBody['message'] ?? '';
+        $token = $parsedBody['csrf_token'] ?? null;
 
         if (!Security::validateToken($token)) {
-            // CSRFトークン無効の場合は、フォームを表示（メッセージは初期表示）
-            // errorFlashMessageは設定しない
+            $flashMessage = '不正なリクエストです。再度お試しください。';
+            $flashType = 'danger';
         } elseif (empty(trim((string)$message))) {
             $flashMessage = 'メッセージを入力してください。';
             $flashType = 'warning';
@@ -82,6 +83,10 @@ function main_http(ServerRequestInterface $request): string
                 $flashType = 'danger';
             }
         }
+    } else {
+        // GETの場合：クエリパラメータからメッセージの初期値を取得
+        $queryParams = $request->getQueryParams();
+        $message = $queryParams['message'] ?? '';
     }
 
     return $blade->run('index', [
