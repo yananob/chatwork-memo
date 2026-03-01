@@ -35,6 +35,7 @@ class ChatworkSender
         $response = $this->client->request('POST', "rooms/{$this->roomId}/messages", [
             'form_params' => [
                 'body' => $message,
+                'self_unread' => 1,
             ],
         ]);
 
