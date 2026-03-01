@@ -28,13 +28,13 @@ jobs:
       wip_pool_name: 'github-actions-pool'
       wip_provider_name: 'github-provider'
       secrets_config: |-
-        SECRET_KEYS
+        FIREBASE_SERVICE_ACCOUNT
       # gcs_source_dir: ./public/
       # gcs_bucket_name: chatwork-memo-static
       # gcs_bucket_path: test
       # disable_gcs_cache: true
       deploy_http_trigger: true
-      deploy_event_trigger: true
+      deploy_event_trigger: false
       http_max_instance_count: 1
       memory: '256M'
       http_timeout: '5m'
