@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 
 /**
@@ -12,13 +13,14 @@ use GuzzleHttp\Exception\GuzzleException;
  */
 class ChatworkSender
 {
-    private Client $client;
-    private string $roomId;
+    private ClientInterface $client;
 
-    public function __construct(string $apiToken, string $roomId)
-    {
-        $this->roomId = $roomId;
-        $this->client = new Client([
+    public function __construct(
+        string $apiToken,
+        private readonly string $roomId,
+        ?ClientInterface $client = null
+    ) {
+        $this->client = $client ?? new Client([
             'base_uri' => 'https://api.chatwork.com/v2/',
             'headers' => [
                 'X-ChatWorkToken' => $apiToken,
@@ -28,6 +30,9 @@ class ChatworkSender
 
     /**
      * メッセージを送信する
+     *
+     * @param string $message
+     * @return int ステータスコード
      * @throws GuzzleException
      */
     public function sendMessage(string $message): int

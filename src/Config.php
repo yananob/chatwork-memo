@@ -19,18 +19,20 @@ class Config
      */
     public static function getEnv(): array
     {
-        // サービスアカウントキーの取得 (JSON文字列 or ファイルパス)
+        // サービスアカウントキーの取得 (JSON文字列)
         $keyJson = getenv('FIREBASE_SERVICE_ACCOUNT');
 
-        $config = [];
-        if ($keyJson) {
-            $config['keyFile'] = json_decode((string)$keyJson, true);
-        } else {
-            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT  が設定されていません。');
+        if (!$keyJson) {
+            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT が設定されていません。');
+        }
+
+        $keyFile = json_decode((string)$keyJson, true);
+        if (!is_array($keyFile)) {
+            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT のJSONフォーマットが無効です。');
         }
 
         try {
-            $firestore = new FirestoreClient($config);
+            $firestore = new FirestoreClient(['keyFile' => $keyFile]);
             $docRef = $firestore->collection('chatwork-memo')->document('config');
             $snapshot = $docRef->snapshot();
 
@@ -38,12 +40,11 @@ class Config
                 throw new \RuntimeException('Firestore に chatwork-memo/config ドキュメントが存在しません。');
             }
 
-            // Google Cloud Firestore PHPライブラリでは data() メソッドを使用する
             $data = $snapshot->data();
             $apiToken = $data['api_token'] ?? null;
             $roomId = $data['room_id'] ?? null;
 
-            if (!$apiToken || !$roomId) {
+            if (empty($apiToken) || empty($roomId)) {
                 throw new \RuntimeException('Firestore の chatwork-memo/config に api_token または room_id が設定されていません。');
             }
 
@@ -51,8 +52,10 @@ class Config
                 'api_token' => (string)$apiToken,
                 'room_id' => (string)$roomId,
             ];
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Firestore からの設定取得に失敗しました: ' . $e->getMessage());
+        } catch (\RuntimeException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Firestore からの設定取得に失敗しました: ' . $e->getMessage(), 0, $e);
         }
     }
 }
