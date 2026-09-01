@@ -19,7 +19,6 @@ FunctionsFramework::http('main_http', 'main_http');
  */
 function main_http(ServerRequestInterface $request): string
 {
-    // セッション開始
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
@@ -27,7 +26,6 @@ function main_http(ServerRequestInterface $request): string
     $views = __DIR__ . '/views';
     $cache = __DIR__ . '/cache';
 
-    // キャッシュディレクトリの存在確認と作成
     if (!is_dir($cache)) {
         mkdir($cache, 0755, true);
     }
@@ -35,16 +33,14 @@ function main_http(ServerRequestInterface $request): string
     $blade = new BladeOne($views, $cache, BladeOne::MODE_AUTO);
 
     try {
-        // 環境変数の取得と検証
         $config = Config::getEnv();
     } catch (\RuntimeException $e) {
-        // 環境変数が未設定の場合のエラー表示
         return $blade->run('index', [
             'flashMessage' => $e->getMessage(),
             'flashType' => 'danger',
             'message' => '',
             'csrfToken' => '',
-            'isError' => true // エラー状態フラグ
+            'isError' => true,
         ]);
     }
 
@@ -53,27 +49,26 @@ function main_http(ServerRequestInterface $request): string
     $message = '';
 
     if ($request->getMethod() === 'POST') {
-        // POSTの場合：メッセージ送信処理
-        $parsedBody = $request->getParsedBody();
-        $message = $parsedBody['message'] ?? '';
-        $token = $parsedBody['csrf_token'] ?? null;
+        $parsedBody = (array) ($request->getParsedBody() ?? []);
+        $message = (string) ($parsedBody['message'] ?? '');
+        $token = is_string($parsedBody['csrf_token'] ?? null) ? $parsedBody['csrf_token'] : null;
 
         if (!Security::validateToken($token)) {
             $flashMessage = '不正なリクエストです。再度お試しください。';
             $flashType = 'danger';
-        } elseif (empty(trim((string)$message))) {
+        } elseif (trim($message) === '') {
             $flashMessage = 'メッセージを入力してください。';
             $flashType = 'warning';
         } else {
             $sender = new ChatworkSender($config['api_token'], $config['room_id']);
 
             try {
-                $statusCode = $sender->sendMessage((string)$message);
+                $statusCode = $sender->sendMessage($message);
 
                 if ($statusCode === 200) {
                     $flashMessage = '送信完了';
                     $flashType = 'success';
-                    $message = ''; // 送信成功時は入力をクリア
+                    $message = '';
                 } else {
                     $flashMessage = '送信に失敗しました。ステータスコード: ' . $statusCode;
                     $flashType = 'danger';
@@ -84,9 +79,8 @@ function main_http(ServerRequestInterface $request): string
             }
         }
     } else {
-        // GETの場合：クエリパラメータからメッセージの初期値を取得
         $queryParams = $request->getQueryParams();
-        $message = $queryParams['message'] ?? '';
+        $message = (string) ($queryParams['message'] ?? '');
     }
 
     return $blade->run('index', [
@@ -94,6 +88,6 @@ function main_http(ServerRequestInterface $request): string
         'flashType' => $flashType,
         'message' => $message,
         'csrfToken' => Security::generateToken(),
-        'isError' => false
+        'isError' => false,
     ]);
 }
