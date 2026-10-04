@@ -14,25 +14,14 @@ class Config
     /**
      * Firestore から設定を取得する
      *
+     * @param FirestoreClient|null $firestore
      * @return array{api_token: string, room_id: string}
      * @throws \RuntimeException
      */
-    public static function getEnv(): array
+    public static function getEnv(?FirestoreClient $firestore = null): array
     {
-        // サービスアカウントキーの取得 (JSON文字列)
-        $keyJson = getenv('FIREBASE_SERVICE_ACCOUNT');
-
-        if (!$keyJson) {
-            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT が設定されていません。');
-        }
-
-        $keyFile = json_decode((string)$keyJson, true);
-        if (!is_array($keyFile)) {
-            throw new \RuntimeException('環境変数 FIREBASE_SERVICE_ACCOUNT のJSONフォーマットが無効です。');
-        }
-
         try {
-            $firestore = new FirestoreClient(['keyFile' => $keyFile]);
+            $firestore = $firestore ?? new FirestoreClient();
             $docRef = $firestore->collection('chatwork-memo')->document('config');
             $snapshot = $docRef->snapshot();
 
