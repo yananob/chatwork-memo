@@ -5,6 +5,8 @@ on:
     branches:
       - test
   pull_request:
+    branches:
+      - test
     types:
       - 'opened'
       - 'synchronize'
@@ -21,14 +23,14 @@ permissions:
 
 jobs:
   deploy:
-    uses: yananob/cloud-functions-common/.github/workflows/deploy-cloud-functions.yaml@main
+    uses: yananob/myapps-common/.github/workflows/deploy-cloud-functions.yaml@main
     with:
       function_name: 'chatwork-memo-test'
       service_account_name: 'cloud-run-functions-deployer'
       wip_pool_name: 'github-actions-pool'
       wip_provider_name: 'github-provider'
-      secrets_config: |-
-        FIREBASE_SERVICE_ACCOUNT
+      # secrets_config: |-
+      #   FIREBASE_SERVICE_ACCOUNT
       # gcs_source_dir: ./public/
       # gcs_bucket_name: chatwork-memo-static
       # gcs_bucket_path: test
