@@ -21,7 +21,11 @@ class Config
     public static function getEnv(?FirestoreClient $firestore = null): array
     {
         try {
-            $firestore = $firestore ?? new FirestoreClient();
+            // PHP 8.4 移行における Cloud Run Functions (第2世代) 環境での gRPC 通信エラーを回避するため、
+            // REST transport を明示的に指定して FirestoreClient を初期化する。
+            $firestore = $firestore ?? new FirestoreClient([
+                'transport' => 'rest',
+            ]);
             $docRef = $firestore->collection('chatwork-memo')->document('config');
             $snapshot = $docRef->snapshot();
 
