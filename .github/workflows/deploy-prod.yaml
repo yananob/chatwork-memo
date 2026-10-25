@@ -26,6 +26,7 @@ jobs:
     uses: yananob/myapps-common/.github/workflows/deploy-cloud-functions.yaml@main
     with:
       function_name: chatwork-memo
+      runtime: 'php84'
       service_account_name: 'cloud-run-functions-deployer'
       wip_pool_name: 'github-actions-pool'
       wip_provider_name: 'github-provider'

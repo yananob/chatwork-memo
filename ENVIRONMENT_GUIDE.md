@@ -27,7 +27,7 @@ Google Cloud サービス（Cloud Functions や Cloud Run 等）上では、適�
 ```yaml
 services:
   php:
-    image: php:8.2-apache
+    image: php:8.4-apache
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: "/app/credentials/service-account-key.json"
 ```
