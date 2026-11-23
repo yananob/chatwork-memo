@@ -1,30 +1,20 @@
-name: Run test
+name: Deploy Cloud Functions (test)
 
 on:
-  # pull_request:
-  #   types: [opened, reopened, edited, synchronize]
-  # push:
-  #   branches:
-  #     - main
-  #     - test
-
-  # schedule:
-  #   - cron:  '45 21 * * 5'
+  pull_request:
+    branches:
+      - test
   workflow_dispatch:
 
 concurrency:
-  group: chatwork-memo-run-test
-
-defaults:
-  run:
-    working-directory: .
+  group: chatwork-memo-deploy-test
 
 permissions:
   contents: 'read'
   id-token: 'write'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     env:
       GRPC_VERBOSITY: ERROR  # GRPCのログ出力を抑止
@@ -67,7 +57,7 @@ jobs:
 
     - name: Install dependencies (Composer)
       run: composer install --prefer-dist --no-progress
-    
+
     # - name: Install dependencies (NPM)
     #   run: npm install --prefer-offline --no-audit --progress=false
 
@@ -80,3 +70,30 @@ jobs:
 
     - name: Test with phpunit
       run: bash tests/run_tests.sh
+
+  deploy:
+    uses: yananob/myapps-common/.github/workflows/deploy-cloud-functions.yaml@main
+    with:
+      function_name: 'chatwork-memo-test'
+      runtime: 'php84'
+      service_account_name: 'cloud-run-functions-deployer'
+      wip_pool_name: 'github-actions-pool'
+      wip_provider_name: 'github-provider'
+      # secrets_config: |-
+      #   FIREBASE_SERVICE_ACCOUNT
+      # gcs_source_dir: ./public/
+      # gcs_bucket_name: chatwork-memo-static
+      # gcs_bucket_path: test
+      # disable_gcs_cache: true
+      deploy_http_trigger: true
+      deploy_event_trigger: false
+      http_max_instance_count: 1
+      memory: '256M'
+      http_timeout: '5m'
+      event_timeout: '540s'
+      environment_variables: |-
+        APP_ENV=test
+    secrets:
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ secrets.GCP_REGION }}
+      GCP_PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
